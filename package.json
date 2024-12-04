@@ -1,0 +1,24 @@
+{
+  "name": "staking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.16"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.1.0",
+    "@types/ws": "^8.5.13",
+    "dotenv": "^16.4.5",
+    "staking": "file:",
+    "tsconfig-paths": "^4.2.0",
+    "ws": "^8.16.0"
+  }
+}
