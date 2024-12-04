@@ -1,6 +1,6 @@
-# Sample Staking Contract
+# Sample Catch-Event Contract
 
-This project demonstrates a staking contract.
+This project demonstrates a catch-event contract.
 
 Try running some of the following tasks:
 
@@ -9,5 +9,5 @@ npm i
 
 npx hardhat compile
 
-npx hardhat run .\scripts\deploy-staking.ts
+npx hardhat run --network sepolia .\scripts\deploy-event.ts
 ```
