@@ -6,6 +6,7 @@ import { ContractABI } from "../types";
 const EXPECTED_PONG_BACK = 15000;
 const KEEP_ALIVE_CHECK_INTERVAL = 60 * 1000;
 const MAX_RECONNECTION_ATTEMPTS = 10;
+const MAX_LOGS_ATTEMPTS = 10;
 const RECONNECTION_DELAY = 5000; // 5 seconds
 const EVENT_POLL_INTERVAL = 60 * 1000; // 1 minute
 
@@ -178,16 +179,45 @@ class ResilientWebsocketProvider {
           toBlock: currentBlock,
           topics: eventTopics,
         };
-        const logs = await this.provider!.getLogs(filter);
+        const logs = await this.getLogsWithRetry(filter);
         for (const log of logs) {
-          subscription.listener(log);
+          try {
+            subscription.listener(log);
+          } catch (listenerError) {
+            console.error(`Error in listener for log:`, listenerError);
+          }
         }
-        subscription.lastestBlock = currentBlock;
+
+        if (logs.length > 0) {
+          subscription.lastestBlock = logs[logs.length - 1].blockNumber;
+        } else {
+          subscription.lastestBlock = currentBlock;
+        }
       } catch (error) {
         console.error(
           `Error polling events for subscription ${subscription.type}:`,
           error
         );
+      }
+    }
+  }
+
+  private async getLogsWithRetry(filter: any): Promise<any> {
+    let attempts = 0;
+    while (attempts < MAX_LOGS_ATTEMPTS) {
+      try {
+        return await this.provider!.getLogs(filter);
+      } catch (error) {
+        attempts++;
+        console.error(
+          `Retrying getLogs (attempt ${attempts}/${MAX_LOGS_ATTEMPTS})`,
+          error
+        );
+        if (attempts >= MAX_LOGS_ATTEMPTS) {
+          console.log("Fail to get logs");
+          return;
+        }
+        await this.sleep(1000);
       }
     }
   }
