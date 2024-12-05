@@ -1,5 +1,7 @@
-import { Listener, ProviderEvent, WebSocketProvider } from "ethers";
-import { WebSocket } from "ws"; // Correct way to import WebSocket
+import { ethers, Listener, ProviderEvent, WebSocketProvider } from "ethers";
+import { WebSocket } from "ws";
+import { contractABI } from "../constants";
+import { ContractABI } from "../types";
 
 const EXPECTED_PONG_BACK = 15000;
 const KEEP_ALIVE_CHECK_INTERVAL = 60 * 1000;
@@ -14,6 +16,7 @@ const debug = (message: string) => {
 interface Subscription {
   type: ProviderEvent;
   listener: Listener;
+  lastestBlock: number;
 }
 
 class ResilientWebsocketProvider {
@@ -28,7 +31,6 @@ class ResilientWebsocketProvider {
   readonly subscriptions: Set<Subscription>;
   private reconnectionAttempts: number;
   private isConnected: boolean;
-  private lastProcessedBlock: number;
 
   constructor(url: string, chainId: number) {
     this.url = url;
@@ -42,7 +44,6 @@ class ResilientWebsocketProvider {
     this.subscriptions = new Set();
     this.reconnectionAttempts = 0;
     this.isConnected = false;
-    this.lastProcessedBlock = 0;
   }
 
   async connect(): Promise<WebSocketProvider | null> {
@@ -148,33 +149,40 @@ class ResilientWebsocketProvider {
     }, EVENT_POLL_INTERVAL);
   }
 
+  private async getTopics(contractABI: ContractABI) {
+    const iface = new ethers.Interface(contractABI);
+
+    const eventTopics = contractABI.map((item) => {
+      if (item.type === "event") {
+        const eventSignature = `${item.name}(${item.inputs
+          .map((input) => input.type)
+          .join(",")})`;
+        const eventTopic = iface.getEvent(eventSignature)?.topicHash!;
+
+        return eventTopic;
+      }
+    });
+
+    return eventTopics.filter((topic) => topic !== undefined);
+  }
+
   private async pollEvents() {
     const currentBlock = await this.provider!.getBlockNumber();
+    const eventTopics = await this.getTopics(contractABI);
+
     for (const subscription of this.subscriptions) {
       try {
-        // Handle different types of subscriptions
-        if (subscription.type === "block") {
-          // For block events, just update the last processed block
-          this.lastProcessedBlock = currentBlock;
-          continue;
+        const filter = {
+          address: (subscription.type as any).address,
+          fromBlock: subscription.lastestBlock + 1,
+          toBlock: currentBlock,
+          topics: eventTopics,
+        };
+        const logs = await this.provider!.getLogs(filter);
+        for (const log of logs) {
+          subscription.listener(log);
         }
-
-        // For contract events (assuming the type is a contract address)
-        if (
-          typeof subscription.type === "string" &&
-          subscription.type.startsWith("0x")
-        ) {
-          const filter = {
-            address: subscription.type,
-            fromBlock: this.lastProcessedBlock + 1,
-            toBlock: currentBlock,
-          };
-          const logs = await this.provider!.getLogs(filter);
-          for (const log of logs) {
-            subscription.listener(log);
-          }
-          this.lastProcessedBlock = currentBlock;
-        }
+        subscription.lastestBlock = currentBlock;
       } catch (error) {
         console.error(
           `Error polling events for subscription ${subscription.type}:`,
@@ -219,9 +227,17 @@ async function createResilientProviders(
         if (provider) {
           // Wrap the provider's 'on' method to track subscriptions
           const originalOn = provider.on.bind(provider);
-          provider.on = (eventName: ProviderEvent, listener: Listener) => {
-            resilientProvider.subscriptions.add({ type: eventName, listener });
-            return originalOn(eventName, listener);
+          const lastestBlock = await provider.getBlockNumber();
+          provider.on = (event: ProviderEvent, listener: Listener) => {
+            if (event !== "block") {
+              resilientProvider.subscriptions.add({
+                type: event,
+                listener,
+                lastestBlock,
+              });
+            }
+
+            return originalOn(event, listener);
           };
         }
         return provider;

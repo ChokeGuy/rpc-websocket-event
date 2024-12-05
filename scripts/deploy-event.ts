@@ -2,37 +2,10 @@ import { Contract, ethers, Provider } from "ethers";
 import { createResilientProviders } from "./web-socket-connection";
 import { network } from "hardhat";
 import { AbiEvent, ContractABI } from "../types";
+import { contractABI } from "../constants";
 
 const providerUrl = process.env.SEPOLIA_PROVIDER_URL!;
-const providerUrl2 = process.env.SEPOLIA_PROVIDER_URL_2!;
 const contractAddress = process.env.SEPOLIA_LISTEN_CONTRACT_ADDRESS!;
-const contractABI: ContractABI = [
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "address",
-        name: "from",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "to",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "value",
-        type: "uint256",
-      },
-    ],
-    name: "Transfer",
-    type: "event",
-  },
-];
 
 const main = async () => {
   await createWebSocket(
@@ -53,7 +26,6 @@ async function createWebSocket(
 
   // Create resilient providers
   const providers = await createResilientProviders(webSocketUrls, chainId);
-
   // Use Promise.all to handle all providers concurrently
   await Promise.all(
     providers.map(async (provider) => {
@@ -86,16 +58,15 @@ async function listenEvent(
 
   await Promise.all(
     eventABIs.map((event) => {
-      const { name, inputs } = event;
+      const { name } = event;
 
       // Listen for events
       contract.on(name, (...args) => {
         const [from, to, value] = args;
         console.log(`Event triggered: ${name}`);
-
         console.log("From:", from);
         console.log("To:", to);
-        console.log("Value:", value);
+        console.log("value:", value);
       });
     })
   );
