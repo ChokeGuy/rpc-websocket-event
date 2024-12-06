@@ -1,5 +1,5 @@
 import { Contract, ethers, Provider } from "ethers";
-import { createResilientProviders } from "./web-socket-connection";
+import { createResilientProviders, getTopics } from "./web-socket-connection";
 import { network } from "hardhat";
 import { AbiEvent, ContractABI } from "../types";
 import { contractABI } from "../constants";
@@ -50,26 +50,33 @@ async function listenEvent(
   provider: Provider
 ) {
   // Create contract instance
-  const contract = new Contract(contractAddress, contractABI, provider);
+  const iface = new ethers.Interface(contractABI);
 
   const eventABIs = contractABI.filter(
     (item): item is AbiEvent => item.type === "event"
   );
 
-  await Promise.all(
-    eventABIs.map((event) => {
-      const { name } = event;
+  const filters = eventABIs.map((event) => {
+    const topic0 = iface.getEvent(event.name)?.topicHash!;
+    return {
+      address: contractAddress,
+      topics: [topic0],
+    };
+  });
 
-      // Listen for events
-      contract.on(name, (...args) => {
-        const [from, to, value] = args;
-        console.log(`Event triggered: ${name}`);
-        console.log("From:", from);
-        console.log("To:", to);
-        console.log("value:", value);
-      });
-    })
-  );
+  filters.forEach((filter, index) => {
+    provider.on(filter, (log) => {
+      const event = eventABIs[index];
+      const decoded = iface.decodeEventLog(event.name, log.data, log.topics);
+
+      const [from, to, value] = decoded;
+      console.log(`Event triggered: ${event.name}`);
+
+      console.log("From:", from);
+      console.log("To:", to);
+      console.log("value:", value);
+    });
+  });
 }
 
 main().catch(console.error);

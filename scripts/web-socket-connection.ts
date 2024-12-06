@@ -150,26 +150,9 @@ class ResilientWebsocketProvider {
     }, EVENT_POLL_INTERVAL);
   }
 
-  private async getTopics(contractABI: ContractABI) {
-    const iface = new ethers.Interface(contractABI);
-
-    const eventTopics = contractABI.map((item) => {
-      if (item.type === "event") {
-        const eventSignature = `${item.name}(${item.inputs
-          .map((input) => input.type)
-          .join(",")})`;
-        const eventTopic = iface.getEvent(eventSignature)?.topicHash!;
-
-        return eventTopic;
-      }
-    });
-
-    return eventTopics.filter((topic) => topic !== undefined);
-  }
-
   private async pollEvents() {
     const currentBlock = await this.provider!.getBlockNumber();
-    const eventTopics = await this.getTopics(contractABI);
+    const eventTopics = await getTopics(contractABI);
 
     for (const subscription of this.subscriptions) {
       try {
@@ -245,6 +228,23 @@ class ResilientWebsocketProvider {
   }
 }
 
+async function getTopics(contractABI: ContractABI) {
+  const iface = new ethers.Interface(contractABI);
+
+  const eventTopics = contractABI.map((item) => {
+    if (item.type === "event") {
+      const eventSignature = `${item.name}(${item.inputs
+        .map((input) => input.type)
+        .join(",")})`;
+      const eventTopic = iface.getEvent(eventSignature)?.topicHash!;
+
+      return eventTopic;
+    }
+  });
+
+  return eventTopics.filter((topic) => topic !== undefined);
+}
+
 async function createResilientProviders(
   urls: string[],
   chainId: number
@@ -287,4 +287,4 @@ async function createResilientProviders(
   ) as WebSocketProvider[];
 }
 
-export { createResilientProviders, ResilientWebsocketProvider };
+export { createResilientProviders, getTopics, ResilientWebsocketProvider };
