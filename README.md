@@ -1,13 +1,53 @@
-# Sample Catch-Event Contract
+# RPC HTTP Event Service
 
-This project demonstrates a catch-event contract.
+RPC HTTP Event Service is a Node.js-based application that listens for and processes blockchain events emitted by smart contracts via RPC (Remote Procedure Calls) on EVM (Ethereum Virtual Machine) compatible blockchains. The service captures these events, processes them in real-time, and stores them in both a Redis cache and MongoDB database for easy access and long-term storage.
 
-Try running some of the following tasks:
+## Features
 
-```shell
-npm i
+- **Blockchain Event Capture**: Listens for events from Ethereum, Binance Smart Chain, or any other EVM-compatible blockchain.
+- **Event Processing**: Processes events in real-time with minimal latency to react to blockchain activity.
+- **Caching with Redis**: Stores the latest blockchain events in Redis for quick access and fast retrieval.
+- **Event Persistence**: Captures all blockchain events and stores them in MongoDB for long-term data retention.
+- **API Interface**: Provides HTTP endpoints to interact with the service and fetch event data.
 
-npx hardhat compile
+## Technologies Used
+requests.
+- **Ethers.js**: Libraries for interacting with EVM-compatible blockchains.
+- **Hardhat**: Development environment for Ethereum software, used for testing and deploying smart contracts.
+- **Redis**: In-memory data structure store used for caching the latest events.
+- **MongoDB**: NoSQL database for storing captured blockchain events.
+- **RPC**: Remote Procedure Calls to interact with the blockchain nodes and listen for events.
 
-npx hardhat run --network sepolia .\scripts\deploy-event.ts
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/rpc-websocket-event.git
+```
+
+### 2. **Navigate to the project directory**
+
+```bash
+cd rpc-event-service
+```
+### 3. **Install dependencies**
+```bash
+npm install
+```
+### 4. **Set up environment variables**
+```
+PRIVATE_KEY=
+BS_API_KEY=
+SEPOLIA_API_KEY=
+OWNER= 
+SEPOLIA_PROVIDER_URL= 
+SEPOLIA_CONTRACT_ADDRESS= 
+BS_CONTRACT_ADDRESS=
+BS_PROVIDER_URLS=
+DEFAULT_BLOCK_SCAN=
+```
+5. **Start the server**
+```bash
+npx hardhat run scripts/deploy-send.ts
 ```
