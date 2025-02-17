@@ -1,6 +1,6 @@
-# RPC HTTP Event Service
+# RPC Websocket Event Service
 
-RPC HTTP Event Service is a Node.js-based application that listens for and processes blockchain events emitted by smart contracts via RPC (Remote Procedure Calls) on EVM (Ethereum Virtual Machine) compatible blockchains. The service captures these events, processes them in real-time, and stores them in both a Redis cache and MongoDB database for easy access and long-term storage.
+RPC Websocket Event Service is a Node.js-based application that listens for and processes blockchain events emitted by smart contracts via RPC (Remote Procedure Calls) on EVM (Ethereum Virtual Machine) compatible blockchains. The service captures these events, processes them in real-time, and stores them in both a Redis cache and MongoDB database for easy access and long-term storage.
 
 ## Features
 
@@ -14,9 +14,6 @@ RPC HTTP Event Service is a Node.js-based application that listens for and proce
 requests.
 - **Ethers.js**: Libraries for interacting with EVM-compatible blockchains.
 - **Hardhat**: Development environment for Ethereum software, used for testing and deploying smart contracts.
-- **Redis**: In-memory data structure store used for caching the latest events.
-- **MongoDB**: NoSQL database for storing captured blockchain events.
-- **RPC**: Remote Procedure Calls to interact with the blockchain nodes and listen for events.
 
 ## Installation
 
@@ -29,7 +26,7 @@ git clone https://github.com/your-username/rpc-websocket-event.git
 ### 2. **Navigate to the project directory**
 
 ```bash
-cd rpc-event-service
+cd rpc-websocket-event
 ```
 ### 3. **Install dependencies**
 ```bash
